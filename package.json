@@ -1,0 +1,22 @@
+{
+  "name": "sockets-test-server",
+  "version": "1.0.0",
+  "description": "A test server for running socket load and other perf tests",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "keywords": [
+    "websocket",
+    "testing",
+    "socket",
+    "testing",
+    "websockets",
+    "tests"
+  ],
+  "author": "picks&shovels",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.2"
+  }
+}

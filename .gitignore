@@ -1,0 +1,15 @@
+# Logs
+logs
+*.log
+
+.DS_Store
+.npmrc
+
+# Dependency directory
+node_modules
+.tmp
+
+# Generated files
+dist
+lib
+build
