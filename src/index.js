@@ -10,8 +10,7 @@ const getBTCTicker = require('./api').getBTCTicker;
 const getETHTicker = require('./api').getETHTicker;
 const createSocketServer = require('./socket-server').createSocketServer;
 
-const naive = require('./naive/server');
-const relay = require('./relay/server');
+const tickers = require('./tickers/server');
 
 const env = process.env.NODE_ENV || 'development';
 const host = process.env.HOST || 'localhost';
@@ -30,8 +29,7 @@ const app = express();
 app.use(cors());
 app.use(express.static('build'));
 
-app.use('/naive', naive);
-app.use('/relay', relay);
+app.use('/tickers', tickers);
 
 app.get('/', (req, res) => {
   res.sendFile('index.html', {root: 'src'});

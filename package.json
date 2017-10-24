@@ -22,15 +22,13 @@
     "cors": "^2.8.4",
     "express": "^4.16.2",
     "redis": "^2.8.0",
-    "uws": "^8.14.1",
-    "ws": "^3.2.0"
+    "uws": "^8.14.1"
   },
   "devDependencies": {
     "benchtable": "^0.1.0",
     "fast-json-stringify": "^0.14.0",
     "microtime": "^2.1.6",
     "msgpack-lite": "^0.1.26",
-    "notepack": "0.0.2",
-    "protobufjs": "^6.8.0"
+    "notepack": "0.0.2"
   }
 }
