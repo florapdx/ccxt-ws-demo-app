@@ -10,11 +10,10 @@ const getBTCTicker = require('./api').getBTCTicker;
 const getETHTicker = require('./api').getETHTicker;
 const createSocketServer = require('./socket-server').createSocketServer;
 
-const tickers = require('./tickers/server');
-
 const env = process.env.NODE_ENV || 'development';
 const host = process.env.HOST || 'localhost';
 
+const ALL_CHANNEL = '/all'; // all tickers
 const BTC_CHANNEL = '/btc';
 const ETH_CHANNEL = '/eth';
 const subscribers = {
@@ -29,12 +28,9 @@ const app = express();
 app.use(cors());
 app.use(express.static('build'));
 
-app.use('/tickers', tickers);
-
-app.get('/', (req, res) => {
+app.get('/*', (req, res) => {
   res.sendFile('index.html', {root: 'src'});
 });
-
 
 /* Create servers */
 const server = env === 'development' ? http.createServer(app) :
@@ -50,11 +46,12 @@ const pub = redis.createClient();
   });
 });
 
-sub.on('message', (channel, msg) => {
+sub.on('message', (chan, msg) => {
   // This is definitely not as nice as socketio.sockets.emit(); :(
   if (wsServer.clients) {
     wsServer.clients.forEach(client => {
-      if (client.readyState === ws.OPEN && client.channel === channel) {
+      const channel = client.channel;
+      if (client.readyState === ws.OPEN && (channel === chan || channel === ALL_CHANNEL)) {
         client.send(msg);
       }
     });

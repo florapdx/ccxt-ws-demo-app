@@ -1,0 +1,38 @@
+body {
+  font-family: sans-serif;
+}
+
+.home nav {
+  margin-left: 20px;
+}
+
+.home a {
+  display: inline-block;
+  margin-left: 20px;
+}
+
+table {
+  width: 90%;
+  min-width: 800px;
+  color: #444;
+  margin: 80px auto;
+  border-collapse: collapse;
+}
+
+thead th {
+  font-size: 12px;
+  font-weight: normal;
+  text-transform: uppercase;
+}
+
+tr {
+  line-height: 30px;
+  text-align: left;
+}
+
+tbody td {
+  min-width: 70px;
+  font-size: 13px;
+  padding: 4px;
+  border: 1px solid #888;
+}

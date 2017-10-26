@@ -1,0 +1,8 @@
+
+{
+  "plugins": [
+    "transform-object-assign",
+    "react-hot-loader/babel"
+  ],
+  "presets": ["env", "stage-1", "react"]
+}
