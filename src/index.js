@@ -6,21 +6,26 @@ const url = require('url');
 const ws = require('uws');
 const redis = require('redis');
 
-const getBTCTicker = require('./api').getBTCTicker;
-const getETHTicker = require('./api').getETHTicker;
-const createSocketServer = require('./socket-server').createSocketServer;
-
-const naive = require('./naive/server');
-const relay = require('./relay/server');
+const getTicker = require('./api').getTicker;
+const getTickers = require('./api').getTickers;
 
 const env = process.env.NODE_ENV || 'development';
 const host = process.env.HOST || 'localhost';
 
-const BTC_CHANNEL = '/btc';
-const ETH_CHANNEL = '/eth';
+const TICKERS_CHANNEL = '/tickers';
 const subscribers = {
-  [BTC_CHANNEL]: 0,
-  [ETH_CHANNEL]: 0
+  [TICKERS_CHANNEL]: 0
+};
+
+const exchangeMap = {
+  'gdax': 'BTC/USD',
+  'kraken': 'ETH/USD',
+  'poloniex': 'STR/BTC',
+  'livecoin': 'LTC/USD',
+  'gemini': 'ETH/BTC',
+  'coinmarketcap': 'DASH/USD',
+  'cex': 'BTC/EUR',
+  'allcoin': 'NEO/BTC'
 };
 
 
@@ -29,9 +34,6 @@ const app = express();
 
 app.use(cors());
 app.use(express.static('build'));
-
-app.use('/naive', naive);
-app.use('/relay', relay);
 
 app.get('/', (req, res) => {
   res.sendFile('index.html', {root: 'src'});
@@ -62,12 +64,17 @@ sub.on('message', (channel, msg) => {
     });
   }
 });
-sub.subscribe(BTC_CHANNEL);
-sub.subscribe(ETH_CHANNEL);
+sub.subscribe(TICKERS_CHANNEL);
 
 const pullData = () => setInterval(() => {
-  getBTCTicker().then(resp => pub.publish(BTC_CHANNEL, resp));
-  getETHTicker().then(resp => pub.publish(ETH_CHANNEL, resp));
+  Object.keys(exchangeMap).forEach(exchange => {
+    getTicker(exchange, exchangeMap[exchange])
+      .then(resp => {
+        if (resp) {
+          pub.publish(TICKERS_CHANNEL, resp);
+        }
+      });
+  });
 }, 1000);
 
 
@@ -89,6 +96,7 @@ wsServer.on('disconnect', (socket) => {
 /* Start up our server and start pulling data */
 server.listen(3000, () => {
   pullData();
+  // console.log('TICKERS', getTickers('gdax'));
 
   const { address, port } = server.address();
   console.log(`Server running at ${address === '::' ? 'localhost' : address} on port ${port}`);

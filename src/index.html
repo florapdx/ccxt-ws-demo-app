@@ -13,10 +13,59 @@
     <![endif]-->
     <div class="main">
       <h1 style="margin-left: 40px">High-rate A/B messages tests</h1>
-      <nav>
-        <a href="/naive">Naive</a>
-        <a href="/relay">Relay</a>
-      </nav>
+      <div id="app">
+          <table>
+            <thead>
+              <tr></tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+      </div>
+      <script>
+        var socket = new WebSocket('ws://localhost:3000/tickers');
+
+        const tickerState = {};
+        let isFirstRow = true;
+
+        const tbody = document.querySelector('tbody');
+
+        socket.addEventListener('message', (message) => {
+          const data = JSON.parse(message.data);
+          delete data.info; // skip this complex nested object for now
+
+          const dataKeys = Object.keys(data);
+          const selector = data.symbol.replace('/', '-').toLowerCase();
+
+          let tr = null;
+          if (!tickerState[selector]) {
+            tr = document.createElement('tr');
+            tr.className = selector;
+            tbody.appendChild(tr);
+            tickerState[selector] = data;
+          } else {
+            tr = document.querySelector(`.${selector}`);
+          }
+
+          dataKeys.forEach(key => {
+            // We only need to build table header column cells once
+            if (isFirstRow) {
+              const th = document.createElement('th');
+              th.innerText = key;
+              document.querySelector('thead tr').appendChild(th);
+            }
+
+            let td = tr.querySelector(`.${key}`);
+            if (!td) {
+              td = document.createElement('td');
+              td.className = `${key}`;
+            }
+            td.innerText = data[key];
+            tr.appendChild(td);
+          });
+
+          isFirstRow = false;
+        });
+      </script>
     </div>
   </body>
 </html>
