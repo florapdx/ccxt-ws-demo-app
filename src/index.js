@@ -19,9 +19,9 @@ const subscribers = {
 
 const exchangeMap = {
   'gdax': 'BTC/USD',
+  'gdax': 'LTC/USD',
   'kraken': 'ETH/USD',
   'poloniex': 'STR/BTC',
-  'livecoin': 'LTC/USD',
   'gemini': 'ETH/BTC',
   'coinmarketcap': 'DASH/USD',
   'cex': 'BTC/EUR',
@@ -35,7 +35,7 @@ const app = express();
 app.use(cors());
 app.use(express.static('build'));
 
-app.get('/', (req, res) => {
+app.get('/*', (req, res) => {
   res.sendFile('index.html', {root: 'src'});
 });
 
