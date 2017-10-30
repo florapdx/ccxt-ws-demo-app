@@ -51,28 +51,29 @@ const stringify = fastStringify({
  * There is a perf benefit to avoiding return await, but if you want
  * to return a thenable, then return await is necessary.
  */
-module.exports.getBTCTicker = async function getBTCTicker() {
-  const gdax = new ccxt.gdax();
+module.exports.getTicker = async function getTicker(exchange, symbol) {
+  exchange = exchange.toLowerCase();
+  const exchangeBroker = new ccxt[exchange]();
 
   try {
-    const gdaxTicker = await gdax.fetchTicker('BTC/USD');
-    const tickerData = await stringify(gdaxTicker);
+    const tickerJSON = await exchangeBroker.fetchTicker(symbol);
+    const tickerData = await stringify(tickerJSON);
 
     return tickerData;
   } catch (err) {
-    console.log('An error occurred during GDAX pull');
+    console.log(`An error occurred during ${exchange} ticker fetch: ${err}.`);
   }
 }
 
-module.exports.getETHTicker = async function getETHTicker() {
-  const kraken = new ccxt.kraken();
+module.exports.getTickers = async function getTickers(exchange) {
+  exchange = exchange.toLowerCase();
+  const exchangeBroker = new ccxt[exchange]();
 
   try {
-    const krakenTicker = await kraken.fetchTicker('ETH/USD');
-    const tickerData = await JSON.stringify(krakenTicker);
-
-    return tickerData;
-  } catch (err) {
-    console.log('An error occurred during KRAKEN pull');
+    const tickers = exchangeBroker.fetchTickers();
+    return tickers;
+  } catch(err) {
+    console.log(`An error occurred during ${exchange} tickers fetch: ${err}.`)
   }
 }
+

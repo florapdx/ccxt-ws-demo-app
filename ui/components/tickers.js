@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import actions from '../actions';
 import Table from './shared/table';
 
-const SOCKET_CHANNEL = 'all';
+const SOCKET_CHANNEL = 'tickers';
 
 class Tickers extends Component {
   constructor() {
