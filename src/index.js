@@ -19,9 +19,9 @@ const subscribers = {
 
 const exchangeMap = {
   'gdax': 'BTC/USD',
+  'gdax': 'LTC/USD',
   'kraken': 'ETH/USD',
   'poloniex': 'STR/BTC',
-  'livecoin': 'LTC/USD',
   'gemini': 'ETH/BTC',
   'coinmarketcap': 'DASH/USD',
   'cex': 'BTC/EUR',

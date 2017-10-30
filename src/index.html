@@ -30,11 +30,13 @@
 
         const tbody = document.querySelector('tbody');
 
+        let dataKeys = [];
+
         socket.addEventListener('message', (message) => {
           const data = JSON.parse(message.data);
           delete data.info; // skip this complex nested object for now
 
-          const dataKeys = Object.keys(data);
+          dataKeys = dataKeys.concat(Object.keys(data).filter(key => key !== 'info' && dataKeys.indexOf(key) === -1));
           const selector = data.symbol.replace('/', '-').toLowerCase();
 
           let tr = null;
@@ -48,9 +50,10 @@
           }
 
           dataKeys.forEach(key => {
-            // We only need to build table header column cells once
-            if (isFirstRow) {
+            // Make sure we have a col header cell for that key
+            if (!document.querySelector(`thead tr .${key}`)) {
               const th = document.createElement('th');
+              th.className = key;
               th.innerText = key;
               document.querySelector('thead tr').appendChild(th);
             }
@@ -60,7 +63,7 @@
               td = document.createElement('td');
               td.className = `${key}`;
             }
-            td.innerText = data[key];
+            td.innerText = data[key] || '';
             tr.appendChild(td);
           });
 
