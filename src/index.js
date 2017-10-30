@@ -33,7 +33,7 @@ const exchangeMap = {
 const app = express();
 
 app.use(cors());
-app.use(express.static('build'));
+app.use(express.static('ui'));
 
 app.get('/', (req, res) => {
   res.sendFile('index.html', {root: 'src'});
