@@ -27,7 +27,7 @@ class Tickers extends Component {
         (tickers && Object.keys(tickers).length !== Object.keys(this.props.tickers).length)
       ) {
       const columns = Object.keys(tickers).reduce((acc, mem) => {
-        let newKeys = Object.keys(tickers[mem]).filter(key => acc.indexOf(key) === -1);
+        let newKeys = Object.keys(tickers[mem]).filter(key => key !== 'info' && acc.indexOf(key) === -1);
         return acc.concat(newKeys);
       }, []);
 
