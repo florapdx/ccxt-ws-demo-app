@@ -39,7 +39,11 @@ const tickerType = new GraphQLObjectType({
   }
 });
 
-const schema = new GraphQLSchema({
+const tickerSubscriptionType = new GraphQLObjectType({
+
+});
+
+export const schema = new GraphQLSchema({
   query: new GraphQLObjectType({
     name: 'Query', // RootQueryType, root?
     fields: {
@@ -49,36 +53,34 @@ const schema = new GraphQLSchema({
           id: { type: GraphQLID }
         },
         resolve(_, args) {
+          // repo ==== your db. Need to adapt to Redis setup
           return args.id ? repo.find(args.id) : repo.findAll()
         }
       }
     }
+  }),
+  mutation: new GraphQLObjectType({
+    name: 'Mutation',
+    fields: {
+      updateTicker: {
+        type: tickerType,
+        args: {
+          id: { type: GraphQLID }
+        },
+        resolve(_, args) {
+          if (args.id) {
+            // Redis.set().then(() => respond with payload)
+          }
+        }
+      }
+    }
+  }),
+  subscription: new GraphQLObjectType({
+    name: 'Subscription',
+    fields: {
+      ticker: {
+        // ??
+      }
+    }
   })
 });
-
-
-type TickerConnection {
-  edges: [TickerEdge]
-  pageInfo: PageInfo!
-}
-
-type TickerEdge {
-  cursor: String!
-  node: Ticker
-}
-
-type PageInfo {
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-  endCursor: String
-}
-
-type Query {
-  node(id: ID!): Node
-}
-
-type TickerSubscriptInput {
-  tickerId: String
-  clientSubscriptionId: String
-}

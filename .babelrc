@@ -5,5 +5,5 @@
     "react-hot-loader/babel",
     "relay"
   ],
-  "presets": ["env", "stage-1", "react"]
+  "presets": ["env", "stage-1", "react", "flow"]
 }
