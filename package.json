@@ -52,6 +52,7 @@
     "react-router-dom": "^4.2.2",
     "redis": "^2.8.0",
     "relay-compiler": "^1.4.1",
+    "relay-runtime": "^1.4.1",
     "style-loader": "^0.19.0",
     "url-loader": "^0.6.2",
     "uws": "^8.14.1",

@@ -6,6 +6,10 @@ const url = require('url');
 const ws = require('uws');
 const redis = require('redis');
 
+const graphQLServer = require('express-graphql');
+const bodyParser = require('');
+const graphQLSchema = require('./graphql-schema');
+
 const getTicker = require('./api').getTicker;
 const getTickers = require('./api').getTickers;
 
@@ -32,20 +36,34 @@ const exchangeMap = {
 /* Create app */
 const app = express();
 
-app.use(cors());
-app.use(express.static('build'));
-
-app.get('/*', (req, res) => {
-  res.sendFile('index.html', {root: 'src'});
-});
-
-
 /* Create servers */
 const server = env === 'development' ? http.createServer(app) :
   https.createServer(app);
 const wsServer = new ws.Server({ server });
 const sub = redis.createClient();
 const pub = redis.createClient();
+
+app.use(cors());
+app.use(express.static('build'));
+
+// Added extension to return the graphQL request execution time.
+// Note: This may or may not be useful for this ws setup.
+app.use('/graphql', graphQLServer(request => {
+  const startTime = Date.now();
+  return {
+    schema: graphQLSchema,
+    graphiql: true,
+    context: { pub, sub },
+    extensions({ document, variables, operationName, result }) {
+      return { runTime: Date.now() - startTime };
+    }
+  };
+}));
+
+app.get('/*', (req, res) => {
+  res.sendFile('index.html', {root: 'src'});
+});
+
 
 /* Set up Redis pubsub */
 [pub, sub].forEach(rs => {
