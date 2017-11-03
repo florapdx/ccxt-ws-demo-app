@@ -1,86 +1,60 @@
-import {
-  graphql,
-  GraphQLID,
-  GraphQLSchema,
-  GraphQLInterfaceType,
-  GraphQLObjectType,
-  GraphQLList,
-  GraphQLString,
-  GraphQLInt,
-  GraphQLNonNull
-} from 'graphql';
+var buildSchema = require('graphql').buildSchema;
 
-import {
-  nodeDefinitions,
-  globalIdField,
-  fromGlobalId,
-  connectionDefinitions,
-  connectionArgs,
-  connectionFromArray
-} from 'graphql-relay';
+// The ID scalar type represents a unique identifier,
+// often used to refetch an object or as the key for a
+// cache. The ID type is serialized in the same way as a
+// String; however, defining it as an ID signifies that
+// t is not intended to be human‐readable.
 
-const tickerType = new GraphQLObjectType({
-  name: 'ticker',
-  description: 'ticker data for a given exchange and currency',
-  fields: {
-    id: GraphQLId
-    symbol: GraphQLString,
-    timestamp: GraphQLInt,
-    datetime: GraphQLString,
-    high: GraphQLInt,
-    low: GraphQLInt,
-    bid: GraphQLInt,
-    ask: GraphQLInt,
-    vwap: GraphQLInt,
-    open: GraphQLInt,
-    last: GraphQLInt,
-    baseVolume: GraphQLInt,
-    quoteVolume: GraphQLInt
+module.exports.schema = buildSchema(`
+  type Ticker {
+    id: ID!
+    symbol: String!
+    timestamp: Int!
+    datetime: String
+    high: Int
+    low: Int
+    bid: Int
+    ask: Int
+    vwap: Int
+    open: Int
+    last: Int
+    baseVolume: Int
+    quoteVolume: Int
   }
-});
 
-const tickerSubscriptionType = new GraphQLObjectType({
+  type TickerInput {
+    symbol: String!
+    timestamp: Int!
+    datetime: String
+    high: Int
+    low: Int
+    bid: Int
+    ask: Int
+    vwap: Int
+    open: Int
+    last: Int
+    baseVolume: Int
+    quoteVolume: Int
+  }
 
-});
+  type Query {
+    getTicker(id: !ID): Ticker
+    allTickers: [Ticker]!
+  }
 
-export const schema = new GraphQLSchema({
-  query: new GraphQLObjectType({
-    name: 'Query', // RootQueryType, root?
-    fields: {
-      tickers: {
-        type: newGraphQLList(tickerType),
-        args: {
-          id: { type: GraphQLID }
-        },
-        resolve(_, args) {
-          // repo ==== your db. Need to adapt to Redis setup
-          return args.id ? repo.find(args.id) : repo.findAll()
-        }
-      }
-    }
-  }),
-  mutation: new GraphQLObjectType({
-    name: 'Mutation',
-    fields: {
-      updateTicker: {
-        type: tickerType,
-        args: {
-          id: { type: GraphQLID }
-        },
-        resolve(_, args) {
-          if (args.id) {
-            // Redis.set().then(() => respond with payload)
-          }
-        }
-      }
-    }
-  }),
-  subscription: new GraphQLObjectType({
-    name: 'Subscription',
-    fields: {
-      ticker: {
-        // ??
-      }
-    }
-  })
-});
+  type Mutation {
+    createTicker(input: TickerInput) : Ticker
+    updateTicker(id: ID!, input: TickerInput) : Ticker
+  }
+
+  type Subscription {
+    updatedTicker(id: ID!): Ticker
+  }
+
+  type Schema {
+    query: Query
+    mutation: Mutation
+    subscription: Subscription
+  }
+`);

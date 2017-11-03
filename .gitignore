@@ -4,6 +4,7 @@ logs
 
 .DS_Store
 .npmrc
+*.rdb
 
 # Dependency directory
 node_modules
