@@ -3,37 +3,108 @@ const $$asyncIterator = require('iterall').$$asyncIterator;
 const execute = require('graphql').execute;
 const subscribe = require('graphql').subscribe;
 
-// Takes a Redis client instance.
+/*
+ * Simplistic Redis PubSub interface. Based on
+ * https://github.com/davidyaha/graphql-redis-subscriptions, but with a
+ * simpler interface.
+ */
 
-// GraphQL subscriptions redis uses graphql-subscriptions, and in
-// particular the PubSubEngine, which it implements.
-// export interface PubSubEngine {
-//   publish(triggerName: string, payload: any): boolean; // EE emits payload
-//   subscribe(triggerName: string, onMessage: Function, options: Object): Promise<number>; // EE adds listener(eventName, onMessage)
-//   unsubscribe(subId: number); // EE removes listener
-//   asyncIterator<T>(triggers: string | string[]): AsyncIterator<T>; // EE and asyncIterator : push and pull queues which hold promises. IDGI
-// }
+class RedisGraphQLPubSub {
+  constructor({ opts }) {
+    this.opts = opts;
+    this.pub = redis.createClient();
+    this.sub = redis.createClient();
 
-// @@@!!!! NOTE: Flora, you can't do it like this b/c you need to export
-// A PubSub engine object that contains the subscribe, unsubscribe, publish, and asyncIterator methods
+    this.subscriberRefs = {};
+    this.subscriptionRefs = {};
+    this.subId = 0;
 
-function onMessage(message) {
-  const { data } = message;
-
-  if (!data) {
-    return;
+    this.pub.on('error', err => console.log('Redis publisher error: ', err));
+    this.sub.on('error', err => console.log('Redis subscriber error: ', err));
+    this.sub.on('message', this._onMessage.bind(this));
   }
 
+  _onMessage(topic, message) {
+    const subscribers = this.subscriptionRefs[topic];
 
-}
+    if (subscribers && message) {
+      const parsed = JSON.parse(message);
+      subscribers.forEach(id => this.subscriberRefs[id].handler(parsed));
+    }
+  }
 
-module.exports.initRedisPubSub = (pub, sub) => {
-  // Attach error listeners
-  const pub = redis.createClient();
-  const sub = redis.createClient();
+  subscribe(topic, handler, opts) {
+    this.subId += 1;
 
-  pub.on('error', err => console.log('Redis publisher error: ', err));
-  sub.on('error', err => console.log('Redis subscriber error: ', err));
+    this.subscriberRefs[this.subId] = {
+      topic,
+      handler
+    };
 
-  sub.on('message', onMessage);
+    if (!this.subscriptionRefs[topic]) {
+      this.subscriptionRefs[topic] = [];
+    }
+
+    if (this.subscriptionRefs[topic].length === 0) {
+      return new Promise((resolve, reject) => {
+        this.subscriber.subscribe(topic, (error) => {
+          if (error) {
+            delete this.subscriberRefs[this.subId];
+            reject(error);
+          } else {
+            this.subscriptionRefs[topic].push(this.subId);
+            resolve(this.subId);
+          }
+        });
+      })
+    } else {
+      this.subscriptionRefs[topic].push(this.subId);
+      return Promise.resolve(this.subId);
+    }
+  }
+
+  unsubscribe(topic, subId) {
+    if (!this.subscriberRefs[topic] || !this.subscriptionRefs[subId]) {
+      return;
+    }
+
+    this.subscriptionRefs[topic] = this.subscriptionRefs[topic].filter(s => s !== subId);
+    delete this.subscriberRefs[subId];
+
+    if (!this.subscriberRefs[topic].length) {
+      this.subscriber.unsubscribe(topic);
+    }
+  }
+
+  publish(topic, message) {
+    return this.publisher.publish(topic, message);
+  }
+
+  returnAsyncIterator(subscriptionName) {
+    let resolver;
+
+    this.sub.on('message', (topic, message) {
+      message = JSON.parse(message);
+
+      if (resolver && subscriptionName === topic) {
+        resolver(message);
+      }
+    });
+
+    return {
+      next() {
+        return new Promise(resolve => { resolver = resolve; })
+          .then(value => ({ value, done: false }));
+      },
+      throw(err) {
+        return Promise.reject(err);
+      },
+      return() {
+        return Promise.resolve({ value: undefined, done: true });
+      },
+      [$$asyncIterator]() {
+        return this;
+      }
+    };
+  }
 }

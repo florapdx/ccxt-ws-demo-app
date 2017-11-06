@@ -30,7 +30,6 @@ module.exports.rootResolvers = {
     return { id, ...input };
   },
   updatedTicker: ({ id }) {
-    // how does this work?
     return {
       subscribe: () => pubsub.asyncIterator(UPDATED_TICKER_CHANNEL),
     };
