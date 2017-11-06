@@ -4,7 +4,6 @@ const https = require('https');
 const cors = require('cors');
 const url = require('url');
 const uws = require('uws');
-const redis = require('redis');
 
 const graphQLHTTP = require('express-graphql');
 const schema = require('./schema').schema;
@@ -40,6 +39,9 @@ const server = env === 'development' ? http.createServer(app) :
 const wsServer = new uws.Server({ server });
 const graphQLWS = createSubscriptionServer(wsServer, exchangeMap);
 
+/* Create Redis PubSub for GraphQL Subscriptions */
+const { pub, sub } = initRedisPubSub();
+
 app.use(cors());
 app.use(express.static('build'));
 
@@ -66,12 +68,6 @@ app.use('/graphql', graphQLHTTP(request => {
 
 app.get('/*', (req, res) => {
   res.sendFile('index.html', {root: 'src'});
-});
-
-// Makre Redis publisher client
-const pub = redis.createClient();
-pub.on('error', (err) => {
-  console.log('Redis publisher error: ', err);
 });
 
 const pullData = () => setInterval(() => {

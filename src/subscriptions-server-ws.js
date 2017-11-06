@@ -7,47 +7,44 @@ const subscribe = require('graphql').subscribe;
 // Event system --> WS Subscription server --> GraphQL server -->
 // WS Subscription server --> client
 
-// export interface PubSubEngine {
-//   publish(triggerName: string, payload: any): boolean; // EE emits payload
-//   subscribe(triggerName: string, onMessage: Function, options: Object): Promise<number>; // EE adds listener(eventName, onMessage)
-//   unsubscribe(subId: number); // EE removes listener
-//   asyncIterator<T>(triggers: string | string[]): AsyncIterator<T>; // EE and asyncIterator : push and pull queues which hold promises. IDGI
-// }
+
 // connectionContext.isLegacy = false;
 // connectionContext.socket = socket;
 // connectionContext.operations = {};
 
-const SUBSCRIBE_MSG = 'SUBSCRIBE';
-const UNSUBSCRIBE_MSG = 'UNSUBSCRIBE';
+const SUBSCRIBE_OPERATION = 'SUBSCRIBE';
+const UNSUBSCRIBE_OPERATION = 'UNSUBSCRIBE';
+const UPDATE_OPERATION = 'UPDATE';
 
-// Make Redis subscriber client
-const sub = redis.createClient();
+
 
 const socketOnMessage = (socket, message) => {
   /* Set up subscribe/unsubscribe to Redis subscription server */
-  const subscribe = message.data.subscribe;
-  const unsubscribe = message.data.unsubscribe;
+  const { data } = message;
+  const { operation } = data;
 
-  if (subscribe) {
-    const subscribeArray = subscribe.split(',');
-    // is this going to add multiple subscriptions for same socket?
-    // or send a message for each subscription to a single topic?
-    subscribeArray.forEach(topic => {
-      sub.subscribe(topic);
-      if (socket.topics.indexOf(topic) === -1) {
-        socket.topics.push(topic);
-      }
-    });
-  } else if (unsubscribe) {
-    const unsubscribeArray = unsubscribe.split(',');
-    unsubscribeArray.forEach(topic => {
-      sub.unsubscribe(topic);
-      socket.topics = socket.topics.filter(t => t !== topic);
-    });
-  } else {
-    // FYI: Just for this little test case we're restricting
-    // client --> server communication to sub/unsub
-    throw new Error('Socket connection only accepts subscribe and unsubscribe messages.');
+  switch (operation) {
+    case SUBSCRIBE_OPERATION:
+      // is this going to add multiple subscriptions for same socket?
+      // or send a message for each subscription to a single topic?
+      data.split(',').forEach(topic => {
+        sub.subscribe(topic);
+        if (socket.topics.indexOf(topic) === -1) {
+          socket.topics.push(topic);
+        }
+      });
+      break;
+    case UNSUBSCRIBE_OPERATION:
+      data.split(',').forEach(topic => {
+        sub.unsubscribe(topic);
+        socket.topics = socket.topics.filter(t => t !== topic);
+      });
+      break;
+    case UPDATE_OPERATION:
+      // do graphQL stuff here
+      break;
+    default:
+      throw new Error('You must provide a valid operation in your message.');
   }
 }
 
