@@ -1,87 +1,101 @@
-const $$asyncIterator = require('iterall').$$asyncIterator;
-const execute = require('graphql').execute;
-const subscribe = require('graphql').subscribe;
+import {
+  $$asyncIterator,
+  createAsyncIterator,
+  isAsyncIterable
+} from 'iterall';
+import fastStringify from 'fast-json-stringify';
+import {
+  parse,
+  validate,
+  execute,
+  subscribe
+} from 'graphql';
 
 // BYO ws-compliant server (ws or uws)
 
-// Event system --> WS Subscription server --> GraphQL server -->
-// WS Subscription server --> client
-
-
-// connectionContext.isLegacy = false;
-// connectionContext.socket = socket;
-// connectionContext.operations = {};
-
 const SUBSCRIBE_OPERATION = 'SUBSCRIBE';
 const UNSUBSCRIBE_OPERATION = 'UNSUBSCRIBE';
-const UPDATE_OPERATION = 'UPDATE';
 
 
-
-const socketOnMessage = (socket, message) => {
+const socketOnMessage = (schema, rootValue, socket, message) => {
   /* Set up subscribe/unsubscribe to Redis subscription server */
-  const { data } = message;
-  const { operation } = data;
+  const data = JSON.parse(message.data);
+  const { operation, topic } = data;
 
   switch (operation) {
     case SUBSCRIBE_OPERATION:
       // is this going to add multiple subscriptions for same socket?
       // or send a message for each subscription to a single topic?
-      data.split(',').forEach(topic => {
-        sub.subscribe(topic);
-        if (socket.topics.indexOf(topic) === -1) {
-          socket.topics.push(topic);
-        }
-      });
+      const {
+        query,
+        variables
+      } = data;
+      query = typeof query === 'string' ? query : parse(query);
+      const validationErrors = validate(schema, query);
+
+      let executionIterable = null;
+
+      if (validationErrors.length) {
+        executionIterable = Promise.resolve(createAsyncIterator({ errors: validationErrors }));
+      } else {
+        executionIterable = Promise.resolve(
+          subscribe(
+            schema,
+            query,
+            rootValue,
+            {}, // context - ?
+            variables,
+            operation
+          )
+        );
+      }
+
+      if (socket.topics.indexOf(topic) === -1) {
+        socket.topics.push(topic);
+      }
+
+      return executionIterable.then(iterable => ({
+        executionIterable: isAsyncIterable(iterable) : iterable :
+          createAsyncIterator([iterable]),
+        params: data
+      })).then(({ executionIterable, params }) => {
+        forAwaitEach(
+          createAsyncIterator(executionIterable),
+          (value) => {
+            if (socket.topics.indexOf(topic) !== -1 && socket.readyState === WebSocket.OPEN) {
+              socket.send(fastStringify({
+                operation,
+                topic,
+                data: value
+              }));
+            }
+          }
+        )
+      })
       break;
     case UNSUBSCRIBE_OPERATION:
-      data.split(',').forEach(topic => {
-        sub.unsubscribe(topic);
-        socket.topics = socket.topics.filter(t => t !== topic);
-      });
-      break;
-    case UPDATE_OPERATION:
-      // do graphQL stuff here
+      socket.topics = socket.topics.filter(t => t !== topic);
       break;
     default:
       throw new Error('You must provide a valid operation in your message.');
   }
 }
 
-module.exports.createSubscriptionServer = (wsServer, topicMap) => {
+export default createSubscriptionServer = (wsServer, topicMap) => {
 
   /* Set up connections to websocket server */
   wsServer.on('connection', (socket, req) => {
     socket.topics = [];
-    console.log("NEW SOCKET CONNECTION");
+    console.log("NEW SOCKET CONNECTION: ", console.log(req));
+
     wsServer.on('message', message => socketOnMessage(socket, message));
+    wsServer.on('error', error => console.log('Socket error: ', error));
+    wsServer.on('close', () => console.log('Socket closed'));
   });
 
   wsServer.on('disconnect', (socket) => {
     console.log("SOCKET DISCONNECTION");
     socket.topics = null;
     socket.close();
-  });
-
-  const topics = Object.keys(topicMap).map(k => topicMap[k]);
-
-  sub.on('message', (topic, msg) => {
-    const isValidTopic = topics.indexOf(topic) !== -1;
-    if (isValidTopic) {
-      if (!msg) {
-        break;
-      } else {
-        // call out to graphQL here, returns promise
-        if (wsServer.clients) {
-          wsServer.clients.forEach(client => {
-            if (client.readyState === ws.OPEN && client.channel === channel) {
-              client.send(msg);
-            }
-          });
-        }
-      }
-    } else {
-      throw new Error('Topic is not valid.');
-    }
   });
 }

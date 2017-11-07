@@ -1,5 +1,5 @@
-const fastStringify = require('fast-json-stringify');
-const ccxt = require('ccxt');
+import fastStringify from 'fast-json-stringify';
+import ccxt from 'ccxt';
 
 const INTERVAL = 1000; // 1s
 
@@ -51,7 +51,7 @@ const stringify = fastStringify({
  * There is a perf benefit to avoiding return await, but if you want
  * to return a thenable, then return await is necessary.
  */
-module.exports.getTicker = async function getTicker(exchange, symbol) {
+export const getTicker = async function getTicker(exchange, symbol) {
   exchange = exchange.toLowerCase();
   const exchangeBroker = new ccxt[exchange]();
 
@@ -65,7 +65,7 @@ module.exports.getTicker = async function getTicker(exchange, symbol) {
   }
 }
 
-module.exports.getTickers = async function getTickers(exchange) {
+export const getTickers = async function getTickers(exchange) {
   exchange = exchange.toLowerCase();
   const exchangeBroker = new ccxt[exchange]();
 

@@ -1,12 +1,12 @@
-var buildSchema = require('graphql').buildSchema;
+import { buildSchema } from 'graphql';
 
 // The ID scalar type represents a unique identifier,
 // often used to refetch an object or as the key for a
 // cache. The ID type is serialized in the same way as a
 // String; however, defining it as an ID signifies that
-// t is not intended to be human‐readable.
+// it is not intended to be human‐readable.
 
-module.exports.schema = buildSchema(`
+export const schema = buildSchema(`
   type Ticker {
     id: ID!
     symbol: String!
@@ -23,7 +23,7 @@ module.exports.schema = buildSchema(`
     quoteVolume: Int
   }
 
-  type TickerInput {
+  input TickerInput {
     symbol: String!
     timestamp: Int!
     datetime: String
@@ -39,7 +39,7 @@ module.exports.schema = buildSchema(`
   }
 
   type Query {
-    getTicker(id: !ID): Ticker
+    getTicker(id: ID!): Ticker
     allTickers: [Ticker]!
   }
 
@@ -49,7 +49,7 @@ module.exports.schema = buildSchema(`
   }
 
   type Subscription {
-    updatedTicker(id: ID!): Ticker
+    subscribeToTicker(topic: String!): Ticker
   }
 
   type Schema {

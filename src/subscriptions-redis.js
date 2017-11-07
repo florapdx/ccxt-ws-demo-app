@@ -1,27 +1,30 @@
-const redis = require('redis');
-const $$asyncIterator = require('iterall').$$asyncIterator;
-const execute = require('graphql').execute;
-const subscribe = require('graphql').subscribe;
+import redis from 'redis';
+import { $$asyncIterator } from 'iterall';
 
 /*
  * Simplistic Redis PubSub interface. Based on
- * https://github.com/davidyaha/graphql-redis-subscriptions, but with a
- * simpler interface.
+ * https://github.com/davidyaha/graphql-redis-subscriptions, but stripped down
+ * and no conflict with latest graphql-js native support for subscriptions.
  */
 
-class RedisGraphQLPubSub {
-  constructor({ opts }) {
+export default class RedisGraphQLPubSub {
+  constructor(opts) {
     this.opts = opts;
-    this.pub = redis.createClient();
-    this.sub = redis.createClient();
+    this.publisher = redis.createClient();
+    this.subscriber = redis.createClient();
 
     this.subscriberRefs = {};
     this.subscriptionRefs = {};
     this.subId = 0;
 
-    this.pub.on('error', err => console.log('Redis publisher error: ', err));
-    this.sub.on('error', err => console.log('Redis subscriber error: ', err));
-    this.sub.on('message', this._onMessage.bind(this));
+    this.subscribe = this.subscribe.bind(this);
+    this.unsubscribe = this.unsubscribe.bind(this);
+    this.publish = this.publish.bind(this);
+    this.returnAsyncIterator = this.returnAsyncIterator.bind(this);
+
+    this.publisher.on('error', err => console.log('Redis publisher error: ', err));
+    this.subscriber.on('error', err => console.log('Redis subscriber error: ', err));
+    this.subscriber.on('message', this._onMessage.bind(this));
   }
 
   _onMessage(topic, message) {
@@ -83,7 +86,7 @@ class RedisGraphQLPubSub {
   returnAsyncIterator(subscriptionName) {
     let resolver;
 
-    this.sub.on('message', (topic, message) {
+    this.sub.on('message', (topic, message) => {
       message = JSON.parse(message);
 
       if (resolver && subscriptionName === topic) {
