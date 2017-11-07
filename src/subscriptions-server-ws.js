@@ -17,7 +17,7 @@ const SUBSCRIBE_OPERATION = 'SUBSCRIBE';
 const UNSUBSCRIBE_OPERATION = 'UNSUBSCRIBE';
 
 
-const socketOnMessage = (schema, rootValue, socket, message) => {
+const socketOnMessage = (schema, socket, message) => {
   /* Set up subscribe/unsubscribe to Redis subscription server */
   const data = JSON.parse(message.data);
   const { operation, topic } = data;
@@ -42,8 +42,8 @@ const socketOnMessage = (schema, rootValue, socket, message) => {
           subscribe(
             schema,
             query,
-            rootValue,
-            {}, // context - ?
+            {}, // rootValue: don't know if we need
+            {}, // context: don't know if we need
             variables,
             operation
           )
@@ -55,7 +55,7 @@ const socketOnMessage = (schema, rootValue, socket, message) => {
       }
 
       return executionIterable.then(iterable => ({
-        executionIterable: isAsyncIterable(iterable) : iterable :
+        executionIterable: isAsyncIterable(iterable) ? iterable :
           createAsyncIterator([iterable]),
         params: data
       })).then(({ executionIterable, params }) => {
@@ -81,14 +81,14 @@ const socketOnMessage = (schema, rootValue, socket, message) => {
   }
 }
 
-export default createSubscriptionServer = (wsServer, topicMap) => {
+export default createSubscriptionServer = (wsServer, schema) => {
 
   /* Set up connections to websocket server */
   wsServer.on('connection', (socket, req) => {
     socket.topics = [];
     console.log("NEW SOCKET CONNECTION: ", console.log(req));
 
-    wsServer.on('message', message => socketOnMessage(socket, message));
+    wsServer.on('message', message => socketOnMessage(schema, socket, message));
     wsServer.on('error', error => console.log('Socket error: ', error));
     wsServer.on('close', () => console.log('Socket closed'));
   });

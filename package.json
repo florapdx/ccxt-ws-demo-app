@@ -8,9 +8,11 @@
     "build:ui": "babel ./ui --out-dir build",
     "build:src": "babel ./src",
     "build": "npm run build:ui && npm run build:src",
+    "relay": "relay-compiler --src ./ui --schema src/schema.js",
     "watch:ui": "webpack -w --config webpack/config.js",
     "watch:src": "babel ./src --watch --out-dir build",
-    "watch": "concurrently \"npm run watch:ui\" && \"npm run watch:src\"",
+    "watch:relay": "npm run relay --watch",
+    "watch": "concurrently \"npm run watch:relay\" && \"npm run watch:ui\" && \"npm run watch:src\"",
     "flow": "flow",
     "test": "npm test"
   },

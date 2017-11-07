@@ -37,7 +37,7 @@ const app = express();
 const server = env === 'development' ? http.createServer(app) :
   https.createServer(app);
 const wsServer = new uws.Server({ server });
-const graphQLWS = initSubscriptionServer(wsServer, exchangeMap);
+const graphQLWS = initSubscriptionServer(wsServer, schema);
 
 app.use(cors());
 app.use(express.static('build'));
