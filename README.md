@@ -1,6 +1,6 @@
-# CCXT WebSocket test app: Minimal app demonstrating real time messaging and rendering options
+# CCXT WebSocket app: Demo app demonstrating real time messaging and rendering options
 
-Small test app providing a minimal server implementation for serving a couple of html pages with CCXT cryptocurrency ticker data (at 1s resolution) over WebSocket. Additionally provides facility for benchmarking various messaging protocols and their encoding/decoding rates using representative ticker data.
+Small demo app providing a minimal server implementation that pulls crypto ticker data via the CCXT API over WebSocket at 1s resolution. Additionally provides facility for benchmarking various messaging protocols and their encoding/decoding rates using representative ticker data.
 
 Base server implementation:
 
